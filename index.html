@@ -4,103 +4,69 @@
   <meta charset="UTF-8">
   <title>Offer Router</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-    }
-  </style>
 </head>
-<body>
 
-<h2>Redirecting to best offer...</h2>
+<body>
+<h2>Redirecting...</h2>
 
 <script>
-/* ================= SETTINGS ================= */
+/* ========= SETTINGS ========= */
 
-// তোমার offer গুলো এখানে add করো
 const OFFERS = [
   "https://example.com/offerA",
   "https://example.com/offerB",
   "https://example.com/offerC"
 ];
 
-// কত ms পরে redirect হবে
-const REDIRECT_DELAY = 500;
+const REDIRECT_DELAY = 300;
 
-// সব offer শেষ হলে কী করবে
-// "stop" | "repeat" | "thankyou"
-const END_MODE = "stop";
-const THANK_YOU_PAGE = "https://google.com";
+/* ========= STATE ========= */
 
-/* ============== CORE LOGIC ================= */
-
-function getOfferIndex() {
-  let index = localStorage.getItem("offer_index");
-  if (index === null) {
-    index = 0;
-    localStorage.setItem("offer_index", index);
+function getIndex() {
+  let i = localStorage.getItem("offer_index");
+  if (i === null) {
+    i = 0;
+    localStorage.setItem("offer_index", i);
   }
-  return parseInt(index, 10);
+  return parseInt(i, 10);
 }
 
-function setOfferIndex(i) {
+function nextIndex() {
+  let i = getIndex() + 1;
   localStorage.setItem("offer_index", i);
 }
 
-function getNextOffer() {
-  let index = getOfferIndex();
+/* ========= REDIRECT ========= */
 
-  if (index >= OFFERS.length) {
-    if (END_MODE === "repeat") {
-      setOfferIndex(0);
-      return OFFERS[0];
-    }
-    if (END_MODE === "thankyou") {
-      return THANK_YOU_PAGE;
-    }
-    return null; // stop
-  }
-
-  return OFFERS[index];
-}
-
-function goToOffer() {
-  const offerUrl = getNextOffer();
-
-  if (!offerUrl) {
+function goOffer() {
+  const i = getIndex();
+  if (i >= OFFERS.length) {
     document.body.innerHTML = "<h2>No more offers</h2>";
     return;
   }
 
   setTimeout(() => {
-    window.location.replace(offerUrl);
+    // ⚠️ IMPORTANT: href, NOT replace
+    window.location.href = OFFERS[i];
   }, REDIRECT_DELAY);
 }
 
-/* ============== BACK BUTTON HANDLING ============== */
+/* ========= HISTORY SETUP ========= */
 
-// history trap
+// website history ensure
 history.pushState({ page: "router" }, "", location.href);
 
-// initial redirect
-goToOffer();
+// first redirect
+goOffer();
 
-// back button detect
+/* ========= BACK BUTTON ========= */
+
 window.addEventListener("popstate", function () {
-  let index = getOfferIndex();
-  setOfferIndex(index + 1);
+  nextIndex(); // move to next offer
 
   history.pushState({ page: "router" }, "", location.href);
-  goToOffer();
+  goOffer();
 });
-
 </script>
 
 </body>
