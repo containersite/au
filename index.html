@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Redirecting...</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <style>
     body {
       margin: 0;
@@ -17,25 +16,20 @@
     }
   </style>
 </head>
-
 <body>
   <h2>Wait while redirecting...</h2>
 
   <script>
     /************** SETTINGS **************/
     const CLICK_CODE = "wen25tvh";     // campaign / click code
-    const TRACK_ENDPOINT = "";         // চাইলে এখানে API বসাতে পারো
-    const REDIRECT_DELAY = 800;        // ms
+    const TRACK_ENDPOINT = "";          // Optional tracking API
+    const REDIRECT_DELAY = 800;         // ms
 
     /************** HELPERS **************/
     function track(eventName, data = {}) {
       console.log("[TRACK]", eventName, data);
-
-      // example: fetch tracking (optional)
-      // fetch(TRACK_ENDPOINT, {
-      //   method: "POST",
-      //   body: JSON.stringify({ event: eventName, data }),
-      // });
+      // Optional: send to server
+      // fetch(TRACK_ENDPOINT, { method: "POST", body: JSON.stringify({ event: eventName, data }) });
     }
 
     function getRedirectUrl() {
@@ -43,9 +37,7 @@
       const domain = url.searchParams.get("domain");
       const z = url.searchParams.get("z");
 
-      if (!domain || !z) {
-        return "https://google.com";
-      }
+      if (!domain || !z) return "https://google.com";
 
       return `https://${domain}/${CLICK_CODE}/${z}${url.search}`;
     }
@@ -53,31 +45,24 @@
     /************** MAIN LOGIC **************/
     const redirectUrl = getRedirectUrl();
 
-    // 1️⃣ Page load tracking
+    // Track page load
     track("page_load", { from: document.referrer });
 
-    // 2️⃣ History hijack (fake history entry)
-    history.pushState({ trapped: true }, "", location.href);
-
-    // 3️⃣ Initial redirect
+    // Delay redirect to simulate "loading" page
     setTimeout(() => {
       track("redirect", { type: "page_load" });
-      window.location.replace(redirectUrl);
+
+      // Use href instead of replace() to preserve history
+      window.location.href = redirectUrl;
+
     }, REDIRECT_DELAY);
 
-    // 4️⃣ Back button hijack
-    window.addEventListener("popstate", function (e) {
-      track("back_button", {});
-
-      // আবার history push করে trap
-      history.pushState({ trapped: true }, "", location.href);
-
-      // back দিলেও আবার redirect
-      setTimeout(() => {
-        track("redirect", { type: "back_button" });
-        window.location.replace(redirectUrl);
-      }, 300);
-    });
+    /************** Optional Back Button Handling **************/
+    // This block ensures Page 3 -> back goes to Page 2, not Page 1
+    // Only needed if you have additional logic on Page 3
+    // window.addEventListener("popstate", function(e) {
+    //   track("back_button", {});
+    // });
   </script>
 </body>
 </html>
