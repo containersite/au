@@ -2,10 +2,10 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Smart Offer Router</title>
+  <title>Offer Step Router</title>
 </head>
 <body>
-<h3>Loading offer...</h3>
+<h3>Loading next offer...</h3>
 
 <script>
 /* ========= CONFIG ========= */
@@ -17,42 +17,45 @@ const OFFERS = [
 ];
 
 const CLICK_CODE = "wen25tvh";
+const DELAY = 300;
 
-/* ========= HELPERS ========= */
+/* ========= URL PARAMS ========= */
 
 const url = new URL(window.location.href);
-let step = parseInt(url.searchParams.get("step") || "0", 10);
+const step = parseInt(url.searchParams.get("step") || "0", 10);
 const domain = url.searchParams.get("domain");
 const z = url.searchParams.get("z");
 
 /* ========= VALIDATION ========= */
 
 if (!domain || !z) {
-  document.body.innerHTML = "Missing parameters";
+  document.body.innerHTML = "Missing domain or z";
   throw new Error("Invalid URL");
 }
 
 if (step >= OFFERS.length) {
   document.body.innerHTML = "<h2>No more offers</h2>";
-  throw new Error("Done");
+  throw new Error("Finished");
 }
+
+/* ========= INTERNAL NEXT STEP ========= */
+
+// VERY IMPORTANT:
+// before leaving to external site,
+// we FIRST create the NEXT internal page in history
+url.searchParams.set("step", step + 1);
+history.replaceState({}, "", url.toString());
 
 /* ========= BUILD OFFER URL ========= */
 
-// example final url:
-// https://offer.com/wen25tvh/12345
 const offerUrl = `https://${domain}/${CLICK_CODE}/${z}`;
-
-/* ========= NEXT STEP URL ========= */
-
-url.searchParams.set("step", step + 1);
 
 /* ========= REDIRECT ========= */
 
 setTimeout(() => {
-  // IMPORTANT: href, not replace
+  // href keeps history
   window.location.href = offerUrl;
-}, 300);
+}, DELAY);
 </script>
 
 </body>
