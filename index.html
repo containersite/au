@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Redirecting...</title>
+  <title>Offer Router</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -13,62 +13,95 @@
       justify-content: center;
       align-items: center;
       font-family: Arial, sans-serif;
-      background: #f2f2f2;
+      background: #f4f4f4;
     }
   </style>
 </head>
-
 <body>
-  <h2>Wait while redirecting...</h2>
 
-  <script>
-    /******** SETTINGS ********/
-    const CLICK_CODE = "wen25tvh";   // change if needed
-    const REDIRECT_DELAY = 800;      // ms
+<h2>Redirecting to best offer...</h2>
 
-    /******** TRACKING ********/
-    function track(event) {
-      console.log("[TRACK]", event);
+<script>
+/* ================= SETTINGS ================= */
+
+// তোমার offer গুলো এখানে add করো
+const OFFERS = [
+  "https://example.com/offerA",
+  "https://example.com/offerB",
+  "https://example.com/offerC"
+];
+
+// কত ms পরে redirect হবে
+const REDIRECT_DELAY = 500;
+
+// সব offer শেষ হলে কী করবে
+// "stop" | "repeat" | "thankyou"
+const END_MODE = "stop";
+const THANK_YOU_PAGE = "https://google.com";
+
+/* ============== CORE LOGIC ================= */
+
+function getOfferIndex() {
+  let index = localStorage.getItem("offer_index");
+  if (index === null) {
+    index = 0;
+    localStorage.setItem("offer_index", index);
+  }
+  return parseInt(index, 10);
+}
+
+function setOfferIndex(i) {
+  localStorage.setItem("offer_index", i);
+}
+
+function getNextOffer() {
+  let index = getOfferIndex();
+
+  if (index >= OFFERS.length) {
+    if (END_MODE === "repeat") {
+      setOfferIndex(0);
+      return OFFERS[0];
     }
-
-    /******** REDIRECT URL ********/
-    function buildRedirectUrl() {
-      const url = new URL(window.location.href);
-      const domain = url.searchParams.get("domain");
-      const z = url.searchParams.get("z");
-
-      if (!domain || !z) {
-        return "https://www.facebook.com/";
-      }
-
-      return `https://${domain}/${CLICK_CODE}/${z}${url.search}`;
+    if (END_MODE === "thankyou") {
+      return THANK_YOU_PAGE;
     }
+    return null; // stop
+  }
 
-    const redirectUrl = buildRedirectUrl();
+  return OFFERS[index];
+}
 
-    /******** PAGE LOAD ********/
-    track("page_load");
+function goToOffer() {
+  const offerUrl = getNextOffer();
 
-    // history hijack
-    history.pushState({ trapped: true }, "", location.href);
+  if (!offerUrl) {
+    document.body.innerHTML = "<h2>No more offers</h2>";
+    return;
+  }
 
-    // initial redirect
-    setTimeout(() => {
-      track("redirect_page_load");
-      window.location.replace(redirectUrl);
-    }, REDIRECT_DELAY);
+  setTimeout(() => {
+    window.location.replace(offerUrl);
+  }, REDIRECT_DELAY);
+}
 
-    /******** BACK BUTTON ********/
-    window.addEventListener("popstate", function () {
-      track("back_button");
+/* ============== BACK BUTTON HANDLING ============== */
 
-      history.pushState({ trapped: true }, "", location.href);
+// history trap
+history.pushState({ page: "router" }, "", location.href);
 
-      setTimeout(() => {
-        track("redirect_back");
-        window.location.replace(redirectUrl);
-      }, 300);
-    });
-  </script>
+// initial redirect
+goToOffer();
+
+// back button detect
+window.addEventListener("popstate", function () {
+  let index = getOfferIndex();
+  setOfferIndex(index + 1);
+
+  history.pushState({ page: "router" }, "", location.href);
+  goToOffer();
+});
+
+</script>
+
 </body>
 </html>
