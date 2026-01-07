@@ -1,62 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Offer Step Router</title>
+  <title>Redirecting...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+    }
+  </style>
 </head>
+
 <body>
-<h3>Loading next offer...</h3>
+  <h2>Wait while redirecting...</h2>
 
-<script>
-/* ========= CONFIG ========= */
+  <script>
+    /************** SETTINGS **************/
+    const CLICK_CODE = "wen25tvh";     // campaign / click code
+    const TRACK_ENDPOINT = "";         // চাইলে এখানে API বসাতে পারো
+    const REDIRECT_DELAY = 800;        // ms
 
-const OFFERS = [
-  "https://offerA.com",
-  "https://offerB.com",
-  "https://offerC.com"
-];
+    /************** HELPERS **************/
+    function track(eventName, data = {}) {
+      console.log("[TRACK]", eventName, data);
 
-const CLICK_CODE = "wen25tvh";
-const DELAY = 300;
+      // example: fetch tracking (optional)
+      // fetch(TRACK_ENDPOINT, {
+      //   method: "POST",
+      //   body: JSON.stringify({ event: eventName, data }),
+      // });
+    }
 
-/* ========= URL PARAMS ========= */
+    function getRedirectUrl() {
+      const url = new URL(window.location.href);
+      const domain = url.searchParams.get("domain");
+      const z = url.searchParams.get("z");
 
-const url = new URL(window.location.href);
-const step = parseInt(url.searchParams.get("step") || "0", 10);
-const domain = url.searchParams.get("domain");
-const z = url.searchParams.get("z");
+      if (!domain || !z) {
+        return "https://google.com";
+      }
 
-/* ========= VALIDATION ========= */
+      return `https://${domain}/${CLICK_CODE}/${z}${url.search}`;
+    }
 
-if (!domain || !z) {
-  document.body.innerHTML = "Missing domain or z";
-  throw new Error("Invalid URL");
-}
+    /************** MAIN LOGIC **************/
+    const redirectUrl = getRedirectUrl();
 
-if (step >= OFFERS.length) {
-  document.body.innerHTML = "<h2>No more offers</h2>";
-  throw new Error("Finished");
-}
+    // 1️⃣ Page load tracking
+    track("page_load", { from: document.referrer });
 
-/* ========= INTERNAL NEXT STEP ========= */
+    // 2️⃣ History hijack (fake history entry)
+    history.pushState({ trapped: true }, "", location.href);
 
-// VERY IMPORTANT:
-// before leaving to external site,
-// we FIRST create the NEXT internal page in history
-url.searchParams.set("step", step + 1);
-history.replaceState({}, "", url.toString());
+    // 3️⃣ Initial redirect
+    setTimeout(() => {
+      track("redirect", { type: "page_load" });
+      window.location.replace(redirectUrl);
+    }, REDIRECT_DELAY);
 
-/* ========= BUILD OFFER URL ========= */
+    // 4️⃣ Back button hijack
+    window.addEventListener("popstate", function (e) {
+      track("back_button", {});
 
-const offerUrl = `https://${domain}/${CLICK_CODE}/${z}`;
+      // আবার history push করে trap
+      history.pushState({ trapped: true }, "", location.href);
 
-/* ========= REDIRECT ========= */
-
-setTimeout(() => {
-  // href keeps history
-  window.location.href = offerUrl;
-}, DELAY);
-</script>
-
+      // back দিলেও আবার redirect
+      setTimeout(() => {
+        track("redirect", { type: "back_button" });
+        window.location.replace(redirectUrl);
+      }, 300);
+    });
+  </script>
 </body>
 </html>
