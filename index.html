@@ -21,15 +21,13 @@
 
   <script>
     /************** SETTINGS **************/
-    const CLICK_CODE = "wen25tvh";     // campaign / click code
-    const TRACK_ENDPOINT = "";          // Optional tracking API
-    const REDIRECT_DELAY = 800;         // ms
+    const CLICK_CODE = "wen25tvh";        // campaign / click code
+    const REDIRECT_DELAY = 800;           // ms
 
-    /************** HELPERS **************/
+    /************** HELPER FUNCTIONS **************/
     function track(eventName, data = {}) {
       console.log("[TRACK]", eventName, data);
-      // Optional: send to server
-      // fetch(TRACK_ENDPOINT, { method: "POST", body: JSON.stringify({ event: eventName, data }) });
+      // Optional: send to server via fetch/beacon
     }
 
     function getRedirectUrl() {
@@ -48,20 +46,20 @@
     // Track page load
     track("page_load", { from: document.referrer });
 
-    // Delay redirect to simulate "loading" page
+    // Delay redirect to simulate "loading"
     setTimeout(() => {
       track("redirect", { type: "page_load" });
 
-      // Use href instead of replace() to preserve history
+      // ✅ Use href to preserve Page1 in history
       window.location.href = redirectUrl;
 
     }, REDIRECT_DELAY);
 
-    /************** Optional Back Button Handling **************/
-    // This block ensures Page 3 -> back goes to Page 2, not Page 1
-    // Only needed if you have additional logic on Page 3
-    // window.addEventListener("popstate", function(e) {
+    /************** Optional: Page3 Back Handling **************/
+    // If you need special back behavior on Page3, you can add popstate listener
+    // window.addEventListener("popstate", function () {
     //   track("back_button", {});
+    //   // let browser naturally go back to Page1
     // });
   </script>
 </body>
